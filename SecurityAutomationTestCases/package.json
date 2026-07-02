@@ -1,0 +1,26 @@
+{
+  "name": "security-automation-test-cases",
+  "version": "1.0.0",
+  "description": "Playwright + TypeScript + Cucumber BDD automation for the top security regression scenarios from Testcases/security_test_cases.json. Targets the OWASP Vulnerability Learning Lab Spring Boot app.",
+  "private": true,
+  "scripts": {
+    "bdd": "cucumber-js",
+    "bdd:chromium": "cucumber-js --profile chromium",
+    "bdd:firefox": "cucumber-js --profile firefox",
+    "bdd:webkit": "cucumber-js --profile webkit",
+    "bdd:auth": "cucumber-js features/authentication.feature",
+    "bdd:sql": "cucumber-js features/injection.feature",
+    "bdd:headers": "cucumber-js features/security-headers.feature",
+    "report": "node utils/generate-report.js",
+    "tsc:check": "tsc --noEmit",
+    "clean": "node -e \"const fs=require('fs');['reports','playwright-report','screenshots','videos'].forEach(d=>{const p='./'+d;if(fs.existsSync(p))fs.rmSync(p,{recursive:true,force:true});});console.log('cleaned');\""
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "^10.0.0",
+    "@playwright/test": "^1.45.0",
+    "@types/node": "^20.11.0",
+    "playwright": "^1.45.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  }
+}

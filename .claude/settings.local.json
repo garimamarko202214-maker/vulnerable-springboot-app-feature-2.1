@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(choco list *)",
+      "Bash(powershell -Command \"Get-Command mvn -ErrorAction SilentlyContinue\")",
+      "Bash(powershell -Command \"[Environment]::GetEnvironmentVariable\\('MAVEN_HOME','User'\\)\")",
+      "Bash(powershell -Command \"[Environment]::GetEnvironmentVariable\\('MAVEN_HOME','Machine'\\)\")"
+    ]
+  }
+}

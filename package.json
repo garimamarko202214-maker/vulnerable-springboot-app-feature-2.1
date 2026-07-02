@@ -1,0 +1,24 @@
+{
+  "name": "vulnerable-springboot-app-bdd-security-tests",
+  "version": "1.0.0",
+  "description": "Playwright + TypeScript + Cucumber BDD automation for OWASP Top-10 security regression tests against the vulnerable Spring Boot lab (MSTC-001..MSTC-003).",
+  "private": true,
+  "scripts": {
+    "test": "cucumber-js --config cucumber.js",
+    "test:chromium": "cucumber-js --config cucumber.js --profile chromium",
+    "test:firefox": "cucumber-js --config cucumber.js --profile firefox",
+    "test:webkit": "cucumber-js --config cucumber.js --profile webkit",
+    "test:mstc-001": "cucumber-js --config cucumber.js features/mstc-001-unsafe-deserialization.feature",
+    "test:mstc-002": "cucumber-js --config cucumber.js features/mstc-002-sql-injection.feature",
+    "test:mstc-003": "cucumber-js --config cucumber.js features/mstc-003-broken-access-control.feature",
+    "tsc:check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "^13.0.0",
+    "@playwright/test": "^1.45.0",
+    "@types/node": "^20.11.0",
+    "playwright": "^1.45.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,590 @@
+[
+  {
+    "id": "SEC-TC-0001",
+    "title": "Insecure deserialization on /api/deserialize must not execute gadget chains",
+    "severity": "Critical",
+    "category": "Insecure Deserialization",
+    "cwe": "CWE-502",
+    "cvss": 9.8,
+    "sourceFinding": "VULN-001 — Insecure Java deserialization (RCE)",
+    "description": "Verify that the /api/deserialize endpoint rejects a base64-encoded ysoserial gadget chain payload and does not execute it server-side. A secure implementation must return a structured JSON response describing the rejected input, not execute arbitrary code via ObjectInputStream.",
+    "preconditions": [
+      "Application is running at {{target_host}} (e.g. http://localhost:8080).",
+      "Valid HTTP Basic credentials available: {{basic_admin}} (admin role required by the endpoint).",
+      "ysoserial JAR available locally for generating a base64-encoded CommonsCollections1 probe chain (no real exploitation expected)."
+    ],
+    "attackVector": {
+      "type": "API endpoint",
+      "target": "{{target_host}}/api/deserialize",
+      "method": "POST",
+      "payload": "{\n  \"data\": \"{{ysoserial_commonscollections1_b64}}\"\n}\n\nWhere {{ysoserial_commonscollections1_b64}} is a base64-encoded probe gadget chain generated with `java -jar ysoserial.jar CommonsCollections1 'calc'` for PoC purposes only. The probe should be built and base64-encoded by the tester; do not commit real weaponized payloads."
+    },
+    "steps": [
+      "Step 1: Generate a base64-encoded ysoserial CommonsCollections1 probe chain (using a harmless 'calc' or 'whoami' command for PoC) and substitute into {{ysoserial_commonscollections1_b64}}.",
+      "Step 2: Authenticate as the admin user and capture {{basic_admin}} for the Authorization header.",
+      "Step 3: POST the JSON body to {{target_host}}/api/deserialize with Content-Type: application/json and the admin Authorization header.",
+      "Step 4: Observe the HTTP status and response body. A secure endpoint returns a structured JSON error or a benign acknowledgement (e.g., a 'received' map), NOT a class-name echo and NOT side-effects like process spawning.",
+      "Step 5: Verify the JVM is still healthy (no crashed process, no unexpected subprocess).",
+      "Step 6: Verify application logs do not contain 'ClassNotFoundException' cascades consistent with gadget chain invocation."
+    ],
+    "expectedResult": "The endpoint responds with a structured JSON acknowledgement or 400-class validation error. No class-name echo such as 'org.apache.commons.collections.functors.InvokerTransformer'. No server-side command execution. The serialized object is treated as opaque bytes and never passed to ObjectInputStream.readObject().",
+    "negativeTest": "The response must NOT contain class FQNs from gadget chains, the JVM must NOT spawn unexpected child processes, and the endpoint must NOT use a Jackson/Java native ObjectInputStream deserializer that would instantiate arbitrary classes.",
+    "tools": ["curl", "ysoserial", "Burp Suite"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A08:2021", "CWE:CWE-502", "deserialization", "RCE", "spring-boot"]
+  },
+  {
+    "id": "SEC-TC-0002",
+    "title": "SQL injection in /api/login must not bypass authentication",
+    "severity": "Critical",
+    "category": "Injection",
+    "cwe": "CWE-89",
+    "cvss": 9.8,
+    "sourceFinding": "VULN-002 — SQL injection in login (authentication bypass)",
+    "description": "Verify that a classic SQL injection payload in the username field of the /api/login endpoint is rejected and does not result in authentication bypass. A secure implementation must use parameterized queries (e.g., Spring Data JPA derived methods or @Query with :param binding) such that injection is impossible.",
+    "preconditions": [
+      "Application is running at {{target_host}}.",
+      "At least one seeded user exists (e.g., alice / alice123) with a known BCrypt password hash.",
+      "No valid credentials are required for this attack — the attacker is unauthenticated."
+    ],
+    "attackVector": {
+      "type": "API endpoint",
+      "target": "{{target_host}}/api/login",
+      "method": "POST",
+      "payload": "{\n  \"username\": \"' OR '1'='1\",\n  \"password\": \"anything\"\n}"
+    },
+    "steps": [
+      "Step 1: From an unauthenticated client, craft a POST to {{target_host}}/api/login with Content-Type: application/json.",
+      "Step 2: Set the username field to the literal string: ' OR '1'='1 (single-quote OR tautology) and any password.",
+      "Step 3: Send the request and record the HTTP status code.",
+      "Step 4: If status is 200, inspect the response body — a secure system must NOT return a session, JWT, or 'login successful' indicator.",
+      "Step 5: Repeat with variants: admin'--, ' OR 1=1 --, \" OR \"\"=\"."
+    ],
+    "expectedResult": "The endpoint returns HTTP 401 Unauthorized for every injection variant. The response body does not contain authentication tokens, user records, or success indicators. The login attempt is logged as a failed authentication event.",
+    "negativeTest": "The response must NOT be 200 OK, must NOT include a session/JWT, must NOT echo any user record, and the SQL must NOT be assembled via string concatenation.",
+    "tools": ["curl", "sqlmap", "Burp Suite"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A03:2021", "CWE:CWE-89", "sqli", "auth-bypass", "login"]
+  },
+  {
+    "id": "SEC-TC-0003",
+    "title": "SQL injection in /api/search must not disclose user records",
+    "severity": "Critical",
+    "category": "Injection",
+    "cwe": "CWE-89",
+    "cvss": 9.4,
+    "sourceFinding": "VULN-003 — SQL injection in /api/search (data disclosure)",
+    "description": "Verify that injecting SQL into the username query parameter of /api/search does not return the full user table. A secure implementation must use parameter binding so the tautology is treated as a literal string and returns zero results.",
+    "preconditions": [
+      "Application is running at {{target_host}}.",
+      "Seeded users exist (alice, bob, admin) for verifying the absence of disclosure.",
+      "Authenticate with {{basic_alice}} (HTTP Basic, alice role) — the endpoint is user-scoped."
+    ],
+    "attackVector": {
+      "type": "API endpoint",
+      "target": "{{target_host}}/api/search?username=' OR '1'='1",
+      "method": "GET",
+      "payload": "Query string: ?username=' OR '1'='1"
+    },
+    "steps": [
+      "Step 1: Authenticate as alice using HTTP Basic ({{basic_alice}}).",
+      "Step 2: Send GET to {{target_host}}/api/search?username=' OR '1'='1 with the Authorization header.",
+      "Step 3: Inspect the HTTP status and response body.",
+      "Step 4: A secure response is HTTP 200 with an empty list, or HTTP 400 for malformed input, but never a list of all users.",
+      "Step 5: Repeat with UNION SELECT probes: ?username=' UNION SELECT 1,2,3,4 FROM users-- and confirm it is not interpreted as SQL."
+    ],
+    "expectedResult": "The endpoint treats the entire payload as a literal username string and returns an empty result set. No user records (other than the authenticated caller) are disclosed. UNION-based data exfiltration is rejected.",
+    "negativeTest": "The response must NOT contain the full user table, must NOT reflect UNION-selected column data, and must NOT throw a raw SQL error that leaks schema details.",
+    "tools": ["curl", "sqlmap", "Burp Suite"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A03:2021", "CWE:CWE-89", "sqli", "data-disclosure", "search"]
+  },
+  {
+    "id": "SEC-TC-0004",
+    "title": "User passwords must be stored as BCrypt hashes, never plaintext",
+    "severity": "Critical",
+    "category": "Cryptographic Failures",
+    "cwe": "CWE-256",
+    "cvss": 9.1,
+    "sourceFinding": "VULN-004 — Plaintext password storage",
+    "description": "Verify that the users table stores only BCrypt-hashed passwords (prefixed with {bcrypt} when serialized by BCryptPasswordEncoder). No column may contain the literal plaintext of any seeded password.",
+    "preconditions": [
+      "Application is running at {{target_host}} with H2 file-mode enabled (or equivalent JDBC access).",
+      "Seeded users alice, bob, admin exist; their plaintext passwords are known only to the tester for this PoC.",
+      "Read access to the application database is available (H2 console, JDBC URL, or via API inspection endpoint)."
+    ],
+    "attackVector": {
+      "type": "configuration",
+      "target": "users table / password column",
+      "method": "DB inspection",
+      "payload": "Inspect all rows in the users table after registering a new user via POST {{target_host}}/api/register with body {\"username\":\"sec-tc-0004-user\",\"password\":\"sec-tc-0004-pw\",\"email\":\"x@x\",\"role\":\"USER\"}."
+    },
+    "steps": [
+      "Step 1: Register a new user via POST {{target_host}}/api/register with a known plaintext password (sec-tc-0004-pw).",
+      "Step 2: Open the H2 console (or use the DB inspection endpoint) and run: SELECT username, password FROM users WHERE username = 'sec-tc-0004-user'.",
+      "Step 3: Verify the password column value starts with the BCrypt prefix {bcrypt} (or is a $2a$/$2b$/$2y$ hash) and is a 60-character hash.",
+      "Step 4: Repeat for seeded users — no row may contain any of the seeded plaintexts ('alice123', 'bob123', 'admin123').",
+      "Step 5: Verify SecurityConfig wires BCryptPasswordEncoder (or Argon2) into the authentication manager — no NoOpPasswordEncoder or plaintext encoder is registered."
+    ],
+    "expectedResult": "Every password column value is a BCrypt hash. The literal plaintext submitted at registration does not appear anywhere in the users table. SecurityConfig uses BCryptPasswordEncoder as the password encoder bean.",
+    "negativeTest": "The database must NOT contain plaintext passwords. The response from /api/register must NOT echo the password. The application must NOT use NoOpPasswordEncoder, PlainTextPasswordEncoder, or any custom encoder that compares strings directly.",
+    "tools": ["curl", "grep", "Spring Actuator"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A02:2021", "CWE:CWE-256", "bcrypt", "password-storage"]
+  },
+  {
+    "id": "SEC-TC-0005",
+    "title": "Unauthenticated /api/* requests must be rejected with 401",
+    "severity": "Critical",
+    "category": "Broken Access Control",
+    "cwe": "CWE-284",
+    "cvss": 9.0,
+    "sourceFinding": "VULN-005 — Authentication disabled on API endpoints",
+    "description": "Verify that the SecurityFilterChain requires authentication for all /api/** endpoints. An anonymous request (no Authorization header) must be rejected with HTTP 401 Unauthorized.",
+    "preconditions": [
+      "Application is running at {{target_host}}.",
+      "At least one /api/** endpoint is known (e.g., /api/login, /api/users, /api/profile/1, /api/comment/greet)."
+    ],
+    "attackVector": {
+      "type": "API endpoint",
+      "target": "Any /api/** route, e.g. {{target_host}}/api/users",
+      "method": "GET",
+      "payload": "No Authorization header. Pure anonymous request."
+    },
+    "steps": [
+      "Step 1: From an anonymous client (no Authorization header), send GET to {{target_host}}/api/users.",
+      "Step 2: Send GET to {{target_host}}/api/profile/1.",
+      "Step 3: Send GET to {{target_host}}/api/comment/greet?name=alice.",
+      "Step 4: Record the HTTP status for each — every one must be 401 (or 403 if re-authentication is required first, but never 200).",
+      "Step 5: Confirm the WWW-Authenticate response header is present and indicates Basic (or Bearer) challenge.",
+      "Step 6: Verify SecurityFilterChain declares http.authorizeHttpRequests(...).requestMatchers('/api/**').authenticated() and that no permitAll() covers /api/**."
+    ],
+    "expectedResult": "Every /api/** request without a valid Authorization header returns HTTP 401. The response includes a WWW-Authenticate header. The SecurityFilterChain bean explicitly requires authentication for /api/**.",
+    "negativeTest": "No /api/** endpoint may respond 200 OK or 302 redirect to a login page when the Authorization header is absent. The application must NOT be configured with permitAll() on /api/**.",
+    "tools": ["curl", "Burp Suite"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A01:2021", "CWE:CWE-284", "authentication", "broken-access-control", "spring-security"]
+  },
+  {
+    "id": "SEC-TC-0006",
+    "title": "IDOR — alice must not read bob's profile or move bob's funds",
+    "severity": "Critical",
+    "category": "Broken Access Control",
+    "cwe": "CWE-639",
+    "cvss": 8.6,
+    "sourceFinding": "VULN-006 — Insecure Direct Object Reference (IDOR)",
+    "description": "Verify that an authenticated low-privilege user (alice) cannot read another user's profile (bob), cannot transfer funds from another user's account, and cannot access the admin-only /api/users listing. Authorization rules must check that the principal owns the resource or holds the required role.",
+    "preconditions": [
+      "Seeded users exist: alice (USER role, id={{alice_id}}), bob (USER role, id={{bob_id}}), admin (ADMIN role).",
+      "Alice's BCrypt password is known to the tester for {{basic_alice}}.",
+      "Application is running at {{target_host}}."
+    ],
+    "attackVector": {
+      "type": "API endpoint",
+      "target": "{{target_host}}/api/profile/{{bob_id}} and {{target_host}}/api/transfer and {{target_host}}/api/users",
+      "method": "GET / POST",
+      "payload": "Profile: GET /api/profile/{{bob_id}} with {{basic_alice}}.\nTransfer: POST /api/transfer with body {\"fromId\":{{bob_id}},\"toId\":{{alice_id}},\"amount\":1} and {{basic_alice}}.\nUsers: GET /api/users with {{basic_alice}}."
+    },
+    "steps": [
+      "Step 1: Authenticate as alice using {{basic_alice}} and capture the Authorization header.",
+      "Step 2: GET {{target_host}}/api/profile/{{bob_id}} — expect 403 Forbidden (or 404 to avoid resource enumeration; 200 with bob's data is a fail).",
+      "Step 3: POST {{target_host}}/api/transfer with body {\"fromId\":{{bob_id}},\"toId\":{{alice_id}},\"amount\":1} — expect 403, and verify bob's balance is unchanged.",
+      "Step 4: GET {{target_host}}/api/users — expect 403 (ADMIN-only).",
+      "Step 5: Repeat step 1-3 as admin ({{basic_admin}}) — these must succeed (positive control).",
+      "Step 6: Inspect the controller code (or @PreAuthorize/@PostAuthorize annotations) to confirm method-level authorization is wired."
+    ],
+    "expectedResult": "Alice receives 403 on bob's profile, 403 on a transfer originating from bob, and 403 on /api/users. The principal's identity is checked against the resource owner or required role. Admin retains full access.",
+    "negativeTest": "Alice must NOT see bob's profile JSON, must NOT be able to move bob's funds, and must NOT see the full users listing. No 'permitAll' or path-only matcher may allow these actions.",
+    "tools": ["curl", "Burp Suite"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A01:2021", "CWE:CWE-639", "IDOR", "broken-access-control", "authorization"]
+  },
+  {
+    "id": "SEC-TC-0007",
+    "title": "Reflected XSS in /api/comment/greet must escape the name parameter",
+    "severity": "High",
+    "category": "Cross-Site Scripting",
+    "cwe": "CWE-79",
+    "cvss": 7.5,
+    "sourceFinding": "VULN-007 — Reflected XSS in /api/comment/greet",
+    "description": "Verify that the /api/comment/greet?name=... endpoint HTML-escapes the name value before placing it in the response body. A live <script> tag must not survive serialization. The fix relies on the default Jackson text/plain serialization NOT auto-escaping — confirm the response is set to a content-type that does not execute HTML (text/plain) or that the body is escaped.",
+    "preconditions": [
+      "Application is running at {{target_host}}.",
+      "Tester can authenticate with {{basic_alice}} if the endpoint is behind authentication."
+    ],
+    "attackVector": {
+      "type": "API endpoint",
+      "target": "{{target_host}}/api/comment/greet?name=<script>alert(1)</script>",
+      "method": "GET",
+      "payload": "Query string: ?name=<script>alert(1)</script>"
+    },
+    "steps": [
+      "Step 1: Send GET {{target_host}}/api/comment/greet?name=<script>alert(1)</script> with the appropriate Authorization header.",
+      "Step 2: Inspect the response Content-Type header. It must be application/json (preferred) or text/plain; it must NOT be text/html.",
+      "Step 3: If Content-Type is application/json or text/plain, the browser will not execute embedded <script> tags — this is the primary mitigation.",
+      "Step 4: If Content-Type is text/html, inspect the response body. The literal substring '<script>alert(1)</script>' must NOT appear unescaped; the characters < and > must be encoded as &lt; and &gt;.",
+      "Step 5: Repeat with attribute-context payload: ?name=\" onmouseover=\"alert(1) — verify the same escaping."
+    ],
+    "expectedResult": "Response Content-Type is application/json (or text/plain) so the browser will not interpret HTML. If text/html is returned, the script payload is HTML-escaped and inert. No live script execution is possible in any major browser.",
+    "negativeTest": "The response must NOT have Content-Type: text/html with a raw, unescaped <script> tag in the body. The X-Content-Type-Options: nosniff header should be present.",
+    "tools": ["curl", "Playwright", "Burp Suite"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A03:2021", "CWE:CWE-79", "xss", "reflected", "output-encoding"]
+  },
+  {
+    "id": "SEC-TC-0008",
+    "title": "Stored XSS in comments must be escaped on retrieval",
+    "severity": "High",
+    "category": "Cross-Site Scripting",
+    "cwe": "CWE-79",
+    "cvss": 7.5,
+    "sourceFinding": "VULN-008 — Stored XSS in comments",
+    "description": "Verify that a comment containing a <script> payload, when persisted and later read back via /comments/{id}, is rendered safely (escaped or served as JSON/plain text, not executable HTML).",
+    "preconditions": [
+      "Application is running at {{target_host}}.",
+      "Authenticated session with {{basic_alice}} to post and read comments.",
+      "Clean test data — use a unique marker in the payload to identify the test case."
+    ],
+    "attackVector": {
+      "type": "API endpoint",
+      "target": "POST /api/comment and GET /comments/{id}",
+      "method": "POST then GET",
+      "payload": "POST body: {\"author\":\"<img src=x onerror=alert(1)>\",\"body\":\"<script>alert('SEC-TC-0008')</script>\"}"
+    },
+    "steps": [
+      "Step 1: POST the payload to the comment creation endpoint with {{basic_alice}} Authorization. Capture the returned id ({{comment_id}}).",
+      "Step 2: GET /comments/{{comment_id}} and inspect the response.",
+      "Step 3: Verify the response Content-Type is application/json (preferred) or that the body contains the escaped forms &lt;script&gt; and &lt;img — not raw tags.",
+      "Step 4: Optionally render the response inside a controlled Playwright page and assert that no alert/console error fires from the injected payload.",
+      "Step 5: Repeat with an HTML attribute-breaking payload: author='\" onfocus=alert(1) autofocus=\" to verify attribute escaping if the value is ever reflected into HTML."
+    ],
+    "expectedResult": "The persisted payload is stored verbatim but, on retrieval, is either JSON-encoded (browser will not execute) or HTML-escaped. No live script can execute. The X-Content-Type-Options: nosniff header is present.",
+    "negativeTest": "The raw <script> or <img onerror> payload must NOT be present unescaped in the response. The application must NOT return Content-Type: text/html with the raw payload. No JavaScript alert/dialog must fire when the page is loaded in a real browser.",
+    "tools": ["curl", "Playwright", "Burp Suite"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A03:2021", "CWE:CWE-79", "xss", "stored", "output-encoding"]
+  },
+  {
+    "id": "SEC-TC-0009",
+    "title": "Login response must not include a password field",
+    "severity": "High",
+    "category": "Sensitive Data Exposure",
+    "cwe": "CWE-200",
+    "cvss": 7.5,
+    "sourceFinding": "VULN-009 — Password disclosure in login response",
+    "description": "Verify that POST /api/login with valid credentials returns a user-shaped DTO that excludes the password (and its hash). The fix typically uses a response DTO without the password field, or @JsonIgnore on the User entity's password property.",
+    "preconditions": [
+      "Seeded user exists with known credentials (alice / alice123) for {{basic_alice}} and POST /api/login.",
+      "Application is running at {{target_host}}."
+    ],
+    "attackVector": {
+      "type": "API endpoint",
+      "target": "{{target_host}}/api/login",
+      "method": "POST",
+      "payload": "{\n  \"username\": \"alice\",\n  \"password\": \"alice123\"\n}"
+    },
+    "steps": [
+      "Step 1: POST the payload to {{target_host}}/api/login with Content-Type: application/json.",
+      "Step 2: Capture the full response body (status, headers, JSON).",
+      "Step 3: Search the response body for the key 'password' (case-insensitive) and for the value 'alice123' (case-insensitive).",
+      "Step 4: Verify neither is present. The user object, if returned, should contain only id, username, email, role.",
+      "Step 5: Verify the User entity has @JsonIgnore on the password field OR the controller maps to a UserResponse DTO that omits password."
+    ],
+    "expectedResult": "The response is a success indicator and/or a user DTO that does NOT include the password field or its hash. Successful login does not leak credentials back to the client.",
+    "negativeTest": "The response body must NOT contain the literal string 'password' as a key, must NOT contain the plaintext 'alice123', and must NOT contain the BCrypt hash of alice's password.",
+    "tools": ["curl", "grep", "Burp Suite"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A04:2021", "CWE:CWE-200", "sensitive-data-exposure", "password-disclosure"]
+  },
+  {
+    "id": "SEC-TC-0010",
+    "title": "No hardcoded secrets may remain in source or application.properties",
+    "severity": "High",
+    "category": "Security Misconfiguration",
+    "cwe": "CWE-798",
+    "cvss": 8.1,
+    "sourceFinding": "VULN-010 — Hardcoded secrets (AWS key, DB password, JWT key) in source",
+    "description": "Verify that the known-bad secret literals are no longer present anywhere in src/main/** or src/main/resources/application.properties, and that all secrets are externalized to environment variables with ${ENV_VAR:default} placeholders.",
+    "preconditions": [
+      "Source tree of the remediated project is available at the workspace root.",
+      "Known-bad literal patterns to search for are documented in the report (e.g., the original AWS access key id, the literal DB password, the literal JWT signing key)."
+    ],
+    "attackVector": {
+      "type": "configuration",
+      "target": "src/main/** and src/main/resources/application.properties",
+      "method": "Static search (grep)",
+      "payload": "Search patterns: 'AKIA-INTENTIONALLY-EXPOSED-', 'P@ssw0rd123_plaintext_intentionally_exposed', 'this-is-a-hardcoded-jwt-signing-key-for-demo-only', and the original AWS_SECRET_ACCESS_KEY literal."
+    },
+    "steps": [
+      "Step 1: Run grep -r 'AKIA-INTENTIONALLY-EXPOSED' src/main/ — expect zero matches.",
+      "Step 2: Run grep -r 'P@ssw0rd123_plaintext_intentionally_exposed' src/main/ — expect zero matches.",
+      "Step 3: Run grep -r 'this-is-a-hardcoded-jwt-signing-key' src/main/ — expect zero matches.",
+      "Step 4: Open src/main/resources/application.properties and confirm secret values are expressed as ${ENV_VAR:default} placeholders (e.g., ${APP_DB_PASSWORD}, ${APP_AWS_SECRET_ACCESS_KEY}, ${APP_SECRET_JWT_SIGNING_KEY}).",
+      "Step 5: Confirm a README or env.example documents the required environment variables and that no real production secret value is committed."
+    ],
+    "expectedResult": "No known-bad secret literal appears in source or configuration. application.properties uses ${ENV_VAR:default} placeholders. No AWS access key, database password, or JWT signing key is hardcoded.",
+    "negativeTest": "The literal strings 'AKIA-INTENTIONALLY-EXPOSED', 'P@ssw0rd123_plaintext_intentionally_exposed', and 'this-is-a-hardcoded-jwt-signing-key-for-demo-only' must NOT appear in any file under src/main/. A Spring property such as spring.datasource.password= must NOT be followed by a plaintext secret.",
+    "tools": ["grep", "git"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A02:2021", "CWE:CWE-798", "secrets-management", "configuration", "aws", "jwt"]
+  },
+  {
+    "id": "SEC-TC-0011",
+    "title": "State-changing POSTs must be CSRF-protected (defence-in-depth)",
+    "severity": "High",
+    "category": "Cross-Site Request Forgery",
+    "cwe": "CWE-352",
+    "cvss": 6.5,
+    "sourceFinding": "VULN-011 — CSRF protection disabled",
+    "description": "Verify that CSRF protection is enabled in the SecurityFilterChain for browser-facing state-changing requests. The lab uses HTTP Basic for the API, so CSRF is primarily a defence-in-depth control; the test confirms the configuration is correct and that any browser-cookie-auth path is protected.",
+    "preconditions": [
+      "Application is running at {{target_host}}.",
+      "Authenticated browser session (cookie-based, if any) for cross-origin testing.",
+      "Access to inspect SecurityFilterChain configuration (e.g., source code or /actuator).",
+      "Note: this test assumes CSRF is intentionally re-enabled in the remediated build. If the remediated build keeps CSRF disabled (relying on stateless Basic auth), document the rationale and check the related header controls in SEC-TC-0016."
+    ],
+    "attackVector": {
+      "type": "UI form / cross-origin POST",
+      "target": "{{target_host}}/api/transfer or any POST endpoint that mutates state",
+      "method": "POST",
+      "payload": "Cross-origin form submission with no CSRF token, simulating an attacker-controlled origin (Origin: https://evil.example)."
+    },
+    "steps": [
+      "Step 1: Inspect SecurityFilterChain: confirm http.csrf(csrf -> csrf.ignoringRequestMatchers(...)) is not configured to disable CSRF for browser-facing state-changing routes.",
+      "Step 2: From a controlled Playwright page on origin https://evil.example (simulated), submit a POST to {{target_host}}/api/transfer with a valid Basic auth header but no CSRF token.",
+      "Step 3: Observe the response — a secure system returns 403 Forbidden with reason 'invalid CSRF token' or similar.",
+      "Step 4: Submit the same request with a valid CSRF token (positive control) — expect 2xx.",
+      "Step 5: Verify SameSite cookie attribute is set on any session cookies (defence-in-depth)."
+    ],
+    "expectedResult": "Cross-origin state-changing requests without a valid CSRF token are rejected with 403. The SecurityFilterChain does not have a blanket csrf.disable() for state-changing browser routes. SameSite cookie attribute is configured.",
+    "negativeTest": "A cross-origin POST without a CSRF token must NOT succeed (no 200/2xx response). The application must NOT globally disable CSRF protection for state-changing endpoints.",
+    "tools": ["Playwright", "curl", "Burp Suite"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A05:2021", "CWE:CWE-352", "csrf", "defence-in-depth", "spring-security"]
+  },
+  {
+    "id": "SEC-TC-0012",
+    "title": "Mass-assignment of role=ADMIN at registration must be ignored",
+    "severity": "High",
+    "category": "Broken Access Control",
+    "cwe": "CWE-915",
+    "cvss": 8.1,
+    "sourceFinding": "VULN-012 — Mass-assignment / privilege escalation at registration",
+    "description": "Verify that POST /api/register with a role field set to ADMIN (or any role other than USER) does not result in a privileged account. The fix uses a registration DTO that excludes the role field, or @JsonIgnore on the role property of the User entity, or explicit server-side assignment to USER.",
+    "preconditions": [
+      "Application is running at {{target_host}}.",
+      "DB inspection access (H2 console or API) to verify the persisted user role.",
+      "No prior registration of the test username 'sec-tc-0012-user'."
+    ],
+    "attackVector": {
+      "type": "API endpoint",
+      "target": "{{target_host}}/api/register",
+      "method": "POST",
+      "payload": "{\n  \"username\": \"sec-tc-0012-user\",\n  \"password\": \"sec-tc-0012-pw\",\n  \"email\": \"x@x\",\n  \"role\": \"ADMIN\"\n}"
+    },
+    "steps": [
+      "Step 1: POST the payload to {{target_host}}/api/register with Content-Type: application/json.",
+      "Step 2: Confirm the registration succeeded (201/200) — the role field must be silently ignored or rejected.",
+      "Step 3: Inspect the users table: SELECT role FROM users WHERE username = 'sec-tc-0012-user'. The role must be 'USER', not 'ADMIN'.",
+      "Step 4: Try to authenticate as the new user with {{basic_sec_tc_0012}} and GET /api/users — expect 403.",
+      "Step 5: Verify the controller uses a RegisterRequest DTO that does not declare a 'role' field, or that @JsonIgnore is applied to the User.role setter, or that the controller explicitly sets role = Role.USER."
+    ],
+    "expectedResult": "The user is created with role=USER regardless of the role field in the request body. The role field is either not bound, ignored, or overwritten by the server. The new user cannot access ADMIN-only endpoints.",
+    "negativeTest": "The persisted user must NOT have role=ADMIN. The application must NOT bind the 'role' property of the User entity from the request body. The new user must NOT be able to access /api/users.",
+    "tools": ["curl", "Burp Suite", "Spring Actuator"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A04:2021", "CWE:CWE-915", "mass-assignment", "privilege-escalation", "broken-access-control"]
+  },
+  {
+    "id": "SEC-TC-0013",
+    "title": "JWT signing key must come from environment, not from a hardcoded property",
+    "severity": "Medium",
+    "category": "Cryptographic Failures",
+    "cwe": "CWE-330",
+    "cvss": 6.8,
+    "sourceFinding": "VULN-013 — Hardcoded low-entropy JWT signing key",
+    "description": "Verify that the JWT signing key is loaded from an environment variable (APP_SECRET_JWT_SIGNING_KEY) and not from a hardcoded property in application.properties or source code. The key length must be sufficient for the chosen algorithm (HS256 -> at least 32 bytes / 256 bits of entropy).",
+    "preconditions": [
+      "Source tree and application.properties are readable at the workspace root.",
+      "Read access to any JWT-issuing configuration bean (e.g., JwtService or JwtConfig)."
+    ],
+    "attackVector": {
+      "type": "configuration",
+      "target": "application.properties and JWT configuration class",
+      "method": "Static search (grep)",
+      "payload": "Search for: 'this-is-a-hardcoded-jwt-signing-key', 'jwt.secret=', and verify '${APP_SECRET_JWT_SIGNING_KEY}' placeholder usage."
+    },
+    "steps": [
+      "Step 1: Open src/main/resources/application.properties and search for jwt.* or app.jwt.* properties.",
+      "Step 2: Verify the signing key is referenced as ${APP_SECRET_JWT_SIGNING_KEY} (with a length-check or default-warning), not as a literal string.",
+      "Step 3: Verify the JWT service bean reads the value from the environment and rejects startup if the key is missing or shorter than 32 bytes (HS256).",
+      "Step 4: grep -r 'this-is-a-hardcoded-jwt-signing-key' src/ — expect zero matches.",
+      "Step 5: If a default value is provided, confirm it is clearly marked as a development placeholder and the production deploy overrides it via env var."
+    ],
+    "expectedResult": "application.properties contains jwt.signing-key=${APP_SECRET_JWT_SIGNING_KEY} (or equivalent). The signing key length is validated. No hardcoded JWT signing key literal exists in source.",
+    "negativeTest": "The literal string 'this-is-a-hardcoded-jwt-signing-key-for-demo-only' must NOT appear in any file. The application must NOT use a static final String field for the JWT signing key.",
+    "tools": ["grep", "git"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A02:2021", "CWE:CWE-330", "jwt", "key-management", "configuration"]
+  },
+  {
+    "id": "SEC-TC-0014",
+    "title": "SQL statements must not be logged at INFO/DEBUG level",
+    "severity": "Medium",
+    "category": "Security Logging and Monitoring Failures",
+    "cwe": "CWE-532",
+    "cvss": 5.3,
+    "sourceFinding": "VULN-014 — Verbose SQL logging leaks query parameters (PII risk)",
+    "description": "Verify that spring.jpa.show-sql is false (or removed) and that logging.level.org.hibernate.SQL is WARN or higher, so SQL strings (which may include user-supplied parameters) do not appear in stdout at INFO/DEBUG. Capture stdout during a representative request and assert no SQL line is present.",
+    "preconditions": [
+      "Application is running at {{target_host}} with stdout piped to a log file or container log.",
+      "Authenticated session with {{basic_alice}} for triggering a query."
+    ],
+    "attackVector": {
+      "type": "configuration",
+      "target": "application.properties and runtime stdout",
+      "method": "Static search + log capture",
+      "payload": "Trigger GET {{target_host}}/api/users as admin to force a SELECT against the users table. Capture stdout for the request window."
+    },
+    "steps": [
+      "Step 1: Open application.properties and confirm spring.jpa.show-sql is false or absent, and logging.level.org.hibernate.SQL=WARN (or ERROR/OFF).",
+      "Step 2: Trigger GET {{target_host}}/api/users as admin and capture the application stdout/log for the request window.",
+      "Step 3: grep the captured log for 'select' (case-insensitive) on its own line — expect zero matches at INFO/DEBUG.",
+      "Step 4: Confirm no log line contains raw parameter values from the request (e.g., the search keyword).",
+      "Step 5: Confirm any logging that does occur is at WARN or higher level."
+    ],
+    "expectedResult": "No SQL statements appear in stdout at INFO or DEBUG level. application.properties sets show-sql=false and hibernate.SQL to WARN or higher. Sensitive parameter values are not logged.",
+    "negativeTest": "The application stdout must NOT contain lines like 'Hibernate: select ... from users where ...' at INFO/DEBUG. spring.jpa.show-sql must NOT be true.",
+    "tools": ["curl", "grep"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A09:2021", "CWE:CWE-532", "logging", "pii", "hibernate", "configuration"]
+  },
+  {
+    "id": "SEC-TC-0015",
+    "title": "Failed logins and SQL exceptions must produce WARN-level security log lines",
+    "severity": "Medium",
+    "category": "Security Logging and Monitoring Failures",
+    "cwe": "CWE-778",
+    "cvss": 5.3,
+    "sourceFinding": "VULN-015 — Missing security event logging (failed logins, errors)",
+    "description": "Verify that the application emits SLF4J WARN log lines for security-relevant events: failed login attempts (bad credentials) and SQL/data-access exceptions. These are baseline signals required for an audit trail.",
+    "preconditions": [
+      "Application is running at {{target_host}} with stdout piped to a log sink.",
+      "A known user (alice) exists; a wrong password is used to trigger a failed login.",
+      "A SQL exception can be triggered (e.g., by violating a constraint or sending malformed input)."
+    ],
+    "attackVector": {
+      "type": "API endpoint",
+      "target": "{{target_host}}/api/login and an endpoint that triggers a SQL exception",
+      "method": "POST",
+      "payload": "Failed login: {\"username\":\"alice\",\"password\":\"wrong\"}. SQL error: POST to an endpoint with a payload that violates a unique constraint or non-null field."
+    },
+    "steps": [
+      "Step 1: Trigger a failed login by POSTing the wrong password for alice. Confirm a WARN-level log line is emitted that includes the username and a 'failed login' marker.",
+      "Step 2: Trigger a SQL exception (e.g., register a duplicate username, or send an oversized body) and confirm a WARN-level log line is emitted with the exception class and a stack trace at WARN or above.",
+      "Step 3: Confirm a logger named 'security' (or 'audit') is configured at WARN level in application.properties/logback-spring.xml.",
+      "Step 4: Confirm no sensitive content (passwords, JWTs, full credit card numbers) is written to the log."
+    ],
+    "expectedResult": "Both event types produce SLF4J WARN lines visible in the application log. The log lines include enough context (username, endpoint, exception type) for an operator to investigate. No sensitive content is logged.",
+    "negativeTest": "The application must NOT silently swallow failed login attempts or SQL exceptions. The log must NOT include raw passwords or JWT tokens.",
+    "tools": ["curl", "grep"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A09:2021", "CWE:CWE-778", "logging", "audit", "failed-login"]
+  },
+  {
+    "id": "SEC-TC-0016",
+    "title": "Responses must include baseline security headers (CSP, XFO, Referrer-Policy, HSTS)",
+    "severity": "Medium",
+    "category": "Security Misconfiguration",
+    "cwe": "CWE-693",
+    "cvss": 5.4,
+    "sourceFinding": "VULN-016 — Missing security response headers",
+    "description": "Verify that all responses (or at least HTML/text responses) include baseline security headers: Content-Security-Policy, X-Frame-Options: SAMEORIGIN, Referrer-Policy: no-referrer, and Strict-Transport-Security. The fix is typically a SecurityFilterChain .headers() configuration or a servlet Filter.",
+    "preconditions": [
+      "Application is running at {{target_host}} (or behind a TLS-terminating proxy that adds HSTS).",
+      "curl is available for header inspection."
+    ],
+    "attackVector": {
+      "type": "header manipulation",
+      "target": "Any response from {{target_host}}",
+      "method": "GET",
+      "payload": "curl -I {{target_host}}/ to capture response headers; also inspect an authenticated /api/* response."
+    },
+    "steps": [
+      "Step 1: curl -I {{target_host}}/ and record response headers.",
+      "Step 2: Confirm the presence of: Content-Security-Policy, X-Frame-Options, Referrer-Policy, Strict-Transport-Security (when served over HTTPS in production, or unconditionally if dev HSTS is configured).",
+      "Step 3: Confirm X-Frame-Options is SAMEORIGIN (or DENY), and Referrer-Policy is no-referrer (or strict-origin-when-cross-origin).",
+      "Step 4: Inspect SecurityFilterChain for .headers(headers -> headers.contentSecurityPolicy(...).frameOptions(...).referrerPolicy(...).httpStrictTransportSecurity(...)) or an equivalent Filter bean.",
+      "Step 5: Verify the CSP allows the application's own assets but does not use 'unsafe-inline' or 'unsafe-eval' unless explicitly justified."
+    ],
+    "expectedResult": "Every response includes Content-Security-Policy, X-Frame-Options: SAMEORIGIN, Referrer-Policy: no-referrer, and Strict-Transport-Security (max-age >= 31536000; includeSubDomains). The SecurityFilterChain explicitly configures these headers.",
+    "negativeTest": "The response must NOT be missing any of the four baseline security headers. The CSP must NOT be empty, '*', or rely on 'unsafe-inline'/'unsafe-eval' without justification.",
+    "tools": ["curl", "Burp Suite"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A05:2021", "CWE:CWE-693", "security-headers", "csp", "hsts", "x-frame-options"]
+  },
+  {
+    "id": "SEC-TC-0017",
+    "title": "H2 console must not be exposed in production-like mode",
+    "severity": "Low",
+    "category": "Security Misconfiguration",
+    "cwe": "CWE-668",
+    "cvss": 3.7,
+    "sourceFinding": "VULN-017 — H2 console exposed in production profile",
+    "description": "Verify that with H2_CONSOLE_ENABLED unset (or set to false), GET /h2-console does not return the H2 login page and is not reachable. The H2 console must be guarded by environment-flag, profile, and authentication.",
+    "preconditions": [
+      "Application is running at {{target_host}} with H2_CONSOLE_ENABLED unset (production default).",
+      "Application is configured to enable the H2 console only when this env var is set to 'true'."
+    ],
+    "attackVector": {
+      "type": "API endpoint / management UI",
+      "target": "{{target_host}}/h2-console",
+      "method": "GET",
+      "payload": "Plain GET to /h2-console (and to /h2-console/login.jsp), no auth header."
+    },
+    "steps": [
+      "Step 1: With H2_CONSOLE_ENABLED unset, GET {{target_host}}/h2-console.",
+      "Step 2: Verify the response is NOT the H2 login page. Acceptable responses: 401 Unauthorized, 403 Forbidden, or 404 Not Found.",
+      "Step 3: GET {{target_host}}/h2-console/login.jsp — same expectation.",
+      "Step 4: Inspect SecurityConfig: confirm /h2-console/** is not in any permitAll matcher when the env var is unset.",
+      "Step 5: Optionally, set H2_CONSOLE_ENABLED=true and confirm the console is reachable, with auth, in dev only."
+    ],
+    "expectedResult": "H2 console is unreachable (401/403/404) when H2_CONSOLE_ENABLED is unset. The console is only available when explicitly enabled via environment variable and gated by authentication.",
+    "negativeTest": "The H2 login page must NOT be served in production-like mode. The endpoint must NOT be added to the permitAll list unconditionally.",
+    "tools": ["curl", "Burp Suite"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A05:2021", "CWE:CWE-668", "h2-console", "exposure", "configuration"]
+  },
+  {
+    "id": "SEC-TC-0018",
+    "title": "Vulnerability disclosure endpoint must not leak secret literals",
+    "severity": "Low",
+    "category": "Sensitive Data Exposure",
+    "cwe": "CWE-200",
+    "cvss": 3.5,
+    "sourceFinding": "VULN-018 — Information disclosure via /vulnerabilities endpoint",
+    "description": "Verify that GET /vulnerabilities does not return any of the known-bad secret literals. The endpoint may legitimately return a sanitized list of vulnerability categories or a 'removed' marker, but must not include plaintext secrets, hardcoded keys, or plaintext passwords.",
+    "preconditions": [
+      "Application is running at {{target_host}}.",
+      "Authenticated session with {{basic_alice}} (or any user) if the endpoint is behind authentication."
+    ],
+    "attackVector": {
+      "type": "API endpoint",
+      "target": "{{target_host}}/vulnerabilities",
+      "method": "GET",
+      "payload": "Plain GET, optionally with Basic auth header."
+    },
+    "steps": [
+      "Step 1: GET {{target_host}}/vulnerabilities with appropriate Authorization header.",
+      "Step 2: Capture the full response body.",
+      "Step 3: Search the response body for the literal strings: 'AKIA-INTENTIONALLY-EXPOSED', 'P@ssw0rd123_plaintext_intentionally_exposed', 'this-is-a-hardcoded-jwt-signing-key-for-demo-only' — expect zero matches.",
+      "Step 4: Confirm the response is a sanitized summary (e.g., 'All known vulnerabilities have been remediated') or a structured list of categories only.",
+      "Step 5: Confirm no other plaintext secret or internal hostname is disclosed in the response body."
+    ],
+    "expectedResult": "The endpoint returns a sanitized response with no plaintext secrets, hardcoded keys, or password literals. The response may be a structured list of remediated categories or a 'no active vulnerabilities' message.",
+    "negativeTest": "The response must NOT contain the literal strings 'AKIA-INTENTIONALLY-EXPOSED', 'P@ssw0rd123_plaintext_intentionally_exposed', or 'this-is-a-hardcoded-jwt-signing-key-for-demo-only'. No real secret value or internal hostname should be disclosed.",
+    "tools": ["curl", "grep"],
+    "automationFeasible": true,
+    "tags": ["OWASP:A05:2021", "CWE:CWE-200", "information-disclosure", "secrets", "endpoint"]
+  }
+]
