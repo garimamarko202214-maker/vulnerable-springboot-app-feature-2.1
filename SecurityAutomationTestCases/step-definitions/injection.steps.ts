@@ -62,7 +62,16 @@ Given('the login endpoint is reachable', async function (this: CustomWorld): Pro
   void this;
 });
 
-When('the client posts a login attempt with username {string} and password {string}', async function (this: CustomWorld, username: string, password: string): Promise<void> {
+// The username field is fed straight from the Examples table, so payloads
+// may contain spaces, quotes, dashes, and SQL operators that confuse the
+// built-in {string} cucumber-expression tokenizer (it eagerly matches each
+// space-separated quoted chunk as its own {string}). Use a single regex that
+// captures the whole quoted username/password, then strip the surrounding
+// double quotes before posting the JSON body.
+When(/^the client posts a login attempt with username (.+) and password (.+)$/, async function (this: CustomWorld, rawUsername: string, rawPassword: string): Promise<void> {
+  const strip = (s: string): string => s.replace(/^"|"$/g, '');
+  const username = strip(rawUsername);
+  const password = strip(rawPassword);
   const baseUrl = process.env.TARGET_HOST ?? 'http://localhost:8080';
   const response = await this.state.request.fetch(`${baseUrl}/api/login`, {
     method: 'POST',
