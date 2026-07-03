@@ -1,0 +1,1036 @@
+[
+  {
+    "description": "  Verifies that anonymous requests to protected API endpoints are rejected\n  with HTTP 401. Maps to manual test case SEC-TC-0005 (VULN-005: Authentication\n  disabled on API endpoints).",
+    "elements": [
+      {
+        "description": "",
+        "id": "authentication-boundary-on-/api/**-endpoints;anonymous-request-to-/api/users-must-be-rejected-with-401",
+        "keyword": "Scenario",
+        "line": 11,
+        "name": "Anonymous request to /api/users must be rejected with 401",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1177463899
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 4063699
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3420700
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "the application is running at the target host",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:53"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 933941600
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 12,
+            "name": "the client sends a GET request to \"/api/users\" without an Authorization header",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:64"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 44439500
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 13,
+            "name": "the response status code must be 401",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:72"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 17089599
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 14,
+            "name": "the response must include a WWW-Authenticate challenge header",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:77"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 11241299
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 5815399
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 27335399
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 9923099
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@security",
+            "line": 1
+          },
+          {
+            "name": "@owasp-a01",
+            "line": 1
+          },
+          {
+            "name": "@cwe-284",
+            "line": 1
+          },
+          {
+            "name": "@authentication",
+            "line": 1
+          },
+          {
+            "name": "@critical",
+            "line": 10
+          },
+          {
+            "name": "@SEC-TC-0005",
+            "line": 10
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "authentication-boundary-on-/api/**-endpoints;anonymous-request-to-/api/profile/{id}-must-be-rejected-with-401",
+        "keyword": "Scenario",
+        "line": 17,
+        "name": "Anonymous request to /api/profile/{id} must be rejected with 401",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3936399
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3690500
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3810600
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "the application is running at the target host",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:53"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 34286000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 18,
+            "name": "the client sends a GET request to \"/api/profile/1\" without an Authorization header",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:64"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 10385200
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 19,
+            "name": "the response status code must be 401",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:72"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2283100
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3612900
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3643900
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 4017700
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@security",
+            "line": 1
+          },
+          {
+            "name": "@owasp-a01",
+            "line": 1
+          },
+          {
+            "name": "@cwe-284",
+            "line": 1
+          },
+          {
+            "name": "@authentication",
+            "line": 1
+          },
+          {
+            "name": "@critical",
+            "line": 16
+          },
+          {
+            "name": "@SEC-TC-0005",
+            "line": 16
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "authentication-boundary-on-/api/**-endpoints;anonymous-request-to-/api/comment/greet-must-be-rejected-with-401",
+        "keyword": "Scenario",
+        "line": 22,
+        "name": "Anonymous request to /api/comment/greet must be rejected with 401",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3911599
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3490399
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 4211800
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "the application is running at the target host",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:53"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 39262499
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 23,
+            "name": "the client sends a GET request to \"/api/comment/greet?name=alice\" without an Authorization header",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:64"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 83114900
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 24,
+            "name": "the response status code must be 401",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:72"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2011200
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2977199
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3551000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3046800
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@security",
+            "line": 1
+          },
+          {
+            "name": "@owasp-a01",
+            "line": 1
+          },
+          {
+            "name": "@cwe-284",
+            "line": 1
+          },
+          {
+            "name": "@authentication",
+            "line": 1
+          },
+          {
+            "name": "@critical",
+            "line": 21
+          },
+          {
+            "name": "@SEC-TC-0005",
+            "line": 21
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "authentication-boundary-on-/api/**-endpoints",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Authentication boundary on /api/** endpoints",
+    "tags": [
+      {
+        "name": "@security",
+        "line": 1
+      },
+      {
+        "name": "@owasp-a01",
+        "line": 1
+      },
+      {
+        "name": "@cwe-284",
+        "line": 1
+      },
+      {
+        "name": "@authentication",
+        "line": 1
+      }
+    ],
+    "uri": "features\\authentication.feature"
+  },
+  {
+    "description": "  Verifies that classic SQL injection payloads in the username field of the\n  /api/login endpoint are rejected with HTTP 401. Maps to manual test case\n  SEC-TC-0002 (VULN-002: SQL injection in login (authentication bypass)).",
+    "elements": [
+      {
+        "description": "",
+        "id": "sql-injection-in-/api/login-must-not-bypass-authentication;sql-injection-payload-in-username-must-be-rejected",
+        "keyword": "Scenario Outline",
+        "line": 19,
+        "name": "SQL injection payload in username must be rejected",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3367200
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3662000
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3259699
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "the application is running at the target host",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:53"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 18087500
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "the login endpoint is reachable",
+            "match": {
+              "location": "step-definitions\\injection.steps.ts:59"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2278599
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 13,
+            "name": "the client posts a login attempt with username \"' OR '1'='1\" and password \"anything\"",
+            "match": {
+              "location": "step-definitions\\injection.steps.ts:71"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 721473099
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 14,
+            "name": "the response status code must be 401",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:72"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 6002399
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 15,
+            "name": "the response body must not contain an authentication token",
+            "match": {
+              "location": "step-definitions\\injection.steps.ts:84"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 26102299
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 15261899
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3756699
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 5688299
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@security",
+            "line": 1
+          },
+          {
+            "name": "@owasp-a03",
+            "line": 1
+          },
+          {
+            "name": "@cwe-89",
+            "line": 1
+          },
+          {
+            "name": "@injection",
+            "line": 1
+          },
+          {
+            "name": "@critical",
+            "line": 11
+          },
+          {
+            "name": "@SEC-TC-0002",
+            "line": 11
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "sql-injection-in-/api/login-must-not-bypass-authentication;sql-injection-payload-in-username-must-be-rejected",
+        "keyword": "Scenario Outline",
+        "line": 20,
+        "name": "SQL injection payload in username must be rejected",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2412999
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3518299
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2105499
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "the application is running at the target host",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:53"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 56390899
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "the login endpoint is reachable",
+            "match": {
+              "location": "step-definitions\\injection.steps.ts:59"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 332099
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 13,
+            "name": "the client posts a login attempt with username \"admin'--\" and password \"anything\"",
+            "match": {
+              "location": "step-definitions\\injection.steps.ts:71"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 15764400
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 14,
+            "name": "the response status code must be 401",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:72"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2374800
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 15,
+            "name": "the response body must not contain an authentication token",
+            "match": {
+              "location": "step-definitions\\injection.steps.ts:84"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 6600999
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3184500
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3072199
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3110200
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@security",
+            "line": 1
+          },
+          {
+            "name": "@owasp-a03",
+            "line": 1
+          },
+          {
+            "name": "@cwe-89",
+            "line": 1
+          },
+          {
+            "name": "@injection",
+            "line": 1
+          },
+          {
+            "name": "@critical",
+            "line": 11
+          },
+          {
+            "name": "@SEC-TC-0002",
+            "line": 11
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "sql-injection-in-/api/login-must-not-bypass-authentication;sql-injection-payload-in-username-must-be-rejected",
+        "keyword": "Scenario Outline",
+        "line": 21,
+        "name": "SQL injection payload in username must be rejected",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2411299
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3412299
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2318399
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "the application is running at the target host",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:53"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 195377000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "the login endpoint is reachable",
+            "match": {
+              "location": "step-definitions\\injection.steps.ts:59"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 454899
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 13,
+            "name": "the client posts a login attempt with username \"' OR 1=1 --\" and password \"anything\"",
+            "match": {
+              "location": "step-definitions\\injection.steps.ts:71"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 71696299
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 14,
+            "name": "the response status code must be 401",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:72"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1710199
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 15,
+            "name": "the response body must not contain an authentication token",
+            "match": {
+              "location": "step-definitions\\injection.steps.ts:84"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 6391700
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2962800
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 4214100
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 4168400
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@security",
+            "line": 1
+          },
+          {
+            "name": "@owasp-a03",
+            "line": 1
+          },
+          {
+            "name": "@cwe-89",
+            "line": 1
+          },
+          {
+            "name": "@injection",
+            "line": 1
+          },
+          {
+            "name": "@critical",
+            "line": 11
+          },
+          {
+            "name": "@SEC-TC-0002",
+            "line": 11
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "sql-injection-in-/api/login-must-not-bypass-authentication;sql-injection-payload-in-username-must-be-rejected",
+        "keyword": "Scenario Outline",
+        "line": 22,
+        "name": "SQL injection payload in username must be rejected",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3641499
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3660200
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2159599
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "the application is running at the target host",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:53"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 18006499
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "the login endpoint is reachable",
+            "match": {
+              "location": "step-definitions\\injection.steps.ts:59"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 225699
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 13,
+            "name": "the client posts a login attempt with username \"\" OR \"\"=\"\" and password \"anything\"",
+            "match": {
+              "location": "step-definitions\\injection.steps.ts:71"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 68236999
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 14,
+            "name": "the response status code must be 401",
+            "match": {
+              "location": "step-definitions\\authentication.steps.ts:72"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2427300
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 15,
+            "name": "the response body must not contain an authentication token",
+            "match": {
+              "location": "step-definitions\\injection.steps.ts:84"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 5519000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3018000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3363999
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2618600
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@security",
+            "line": 1
+          },
+          {
+            "name": "@owasp-a03",
+            "line": 1
+          },
+          {
+            "name": "@cwe-89",
+            "line": 1
+          },
+          {
+            "name": "@injection",
+            "line": 1
+          },
+          {
+            "name": "@critical",
+            "line": 11
+          },
+          {
+            "name": "@SEC-TC-0002",
+            "line": 11
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "sql-injection-in-/api/login-must-not-bypass-authentication",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "SQL injection in /api/login must not bypass authentication",
+    "tags": [
+      {
+        "name": "@security",
+        "line": 1
+      },
+      {
+        "name": "@owasp-a03",
+        "line": 1
+      },
+      {
+        "name": "@cwe-89",
+        "line": 1
+      },
+      {
+        "name": "@injection",
+        "line": 1
+      }
+    ],
+    "uri": "features\\injection.feature"
+  }
+]

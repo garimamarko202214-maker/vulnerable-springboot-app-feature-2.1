@@ -1,73 +1,93 @@
-name: Playwright API Tests
+name: Playwright Cucumber Test
 
 on:
   push:
     branches:
       - main
       - master
-
+      - develop
   pull_request:
     branches:
       - main
       - master
+      - develop
 
 jobs:
-  api-tests:
-    name: Playwright API Automation
+  test:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [18.x]
+
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: maven
-
-      - name: Build Spring Boot Project
-        run: mvn clean package -DskipTests
-
-      - name: Start Spring Boot Application
-        run: |
-          mvn spring-boot:run &
-          sleep 20
-
-      - name: Setup Node.js
+      - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ matrix.node-version }}
 
-      - name: Install Node Dependencies
-        working-directory: SecurityAutomationTestCases
+      - name: Install dependencies
         run: npm install
 
-      - name: Install Playwright Browsers
-        working-directory: SecurityAutomationTestCases
+      - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
-      - name: Run Playwright BDD Tests
-        working-directory: SecurityAutomationTestCases
+      - name: Run All Cucumber tests
         run: npm run bdd
 
-      - name: Generate Cucumber HTML Report
+      - name: Generate HTML report
         if: always()
-        working-directory: SecurityAutomationTestCases
-        run: npm run report
+        run: node generate-report.js
 
-
-      - name: Upload Cucumber HTML Report
+      - name: Upload Cucumber report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cucumber-html-report
-          path: SecurityAutomationTestCases/reports/cucumber-report.html
+          name: cucumber-report
+          path: reports/
 
-      - name: Upload Complete Reports Folder
+      - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: reports
-          path: SecurityAutomationTestCases/reports/
+          name: playwright-report
+          path: playwright-report/cucumber-report.html
+
+      - name: Comment PR with test results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const reportPath = 'reports/cucumber-report.html';
+
+            if (fs.existsSync(reportPath)) {
+              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              const scenarios = report[0]?.elements || [];
+              const passed = scenarios.filter(s => s.steps.every(st => st.result.status === 'passed')).length;
+              const failed = scenarios.filter(s => s.steps.some(st => st.result.status === 'failed')).length;
+
+              const comment = `
+              ## 🧪 Cucumber Test Results
+
+              - ✅ Passed: ${passed}
+              - ❌ Failed: ${failed}
+              - 📊 Total: ${scenarios.length}
+
+              📄 **Report**: [View Cucumber Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              `;
+               if (!context.issue.number) {
+             console.log("Not a pull request. Skipping comment.");
+               return;
+               }
+               await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
