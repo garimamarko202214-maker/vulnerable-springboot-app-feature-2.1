@@ -11,9 +11,10 @@
     "bdd:auth": "cucumber-js features/authentication.feature",
     "bdd:sql": "cucumber-js features/injection.feature",
     "bdd:headers": "cucumber-js features/security-headers.feature",
-    "report": "node utils/generate-report.js",
+    "report" : "node generate-report.js",
     "tsc:check": "tsc --noEmit",
     "clean": "node -e \"const fs=require('fs');['reports','playwright-report','screenshots','videos'].forEach(d=>{const p='./'+d;if(fs.existsSync(p))fs.rmSync(p,{recursive:true,force:true});});console.log('cleaned');\""
+    
   },
   "devDependencies": {
     "@cucumber/cucumber": "^10.0.0",
